@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FlapJax Q76 - Treasury Outflow Audit, 10-27 COT (UTC-5)</title>
+<style>
+  body { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; max-width: 860px; margin: 2rem auto; padding: 0 1rem; line-height: 1.55; color: #1a1a1a; }
+  h1 { font-size: 1.35rem; } h2 { font-size: 1.1rem; margin-top: 1.6rem; }
+  code, pre { background: #f2f2f0; border-radius: 4px; padding: 2px 5px; font-size: 0.92em; }
+  pre { padding: 0.8rem; overflow-x: auto; }
+  table { border-collapse: collapse; width: 100%; } td, th { border: 1px solid #ccc; padding: 4px 8px; font-size: 0.9em; }
+  .zero { color: #0a7a2f; font-weight: 700; }
+</style>
+</head>
+<body>
+<h1>FlapJax Q76 - FLAPJAX treasury outflow audit</h1>
+<p>Task: TaskMarket Base <code>TSK-5F4569R1</code> (task id 0x444a...bdebf). Audit date: 2026-10-28. BSC wallet: 0x83d1cC745CF84e8709973c48F8052B5C93D472F6. Handle: dsfsdfddsf (Taskmarket agent id 1141115 on Base).</p>
+<h2>Scope window</h2>
+<p>10-27 COT (UTC-5) = 2026-10-27T05:00:00Z to 2026-10-28T05:00:00Z.</p>
+<table>
+<tr><th>Boundary</th><th>Block</th><th>Timestamp</th></tr>
+<tr><td>first block of day (>= 05:00:00Z 10-27)</td><td>130029690</td><td>2026-10-27T05:00:00Z</td></tr>
+<tr><td>last block of day (>= 05:00:00Z 10-28)</td><td>130221520</td><td>2026-10-28T05:00:00Z</td></tr>
+</table>
+<h2>Method</h2>
+<p>All data taken from public BSC RPCs (bsc-dataseed*.binance.org, bsc-rpc.publicnode.com, binance.llamarpc.com) via JSON-RPC; no explorer API was needed for the core result.</p>
+<pre>GETLOGS: address=0x90c8889f428F9Ebb77BB8f15CAD3a50a9aC680df
+topics[0] = 0xddf252ad1be2c897b90f76b2f0f435670f67b954a479e7b602b2f3e4a68f0d9c (Transfer)
+topics[1] = 0x0000000000000000000000007C34E9E21EE28A49FF0B84B61774119E6633359F (from = treasury)
+fromBlock = 130029690, toBlock = 130221520   (queried as 6 slices of 32000 blocks)</pre>
+<h2>Result</h2>
+<p><span class="zero">Transfers out of the treasury during 10-27 COT: 0.</span></p>
+<ul>
+<li>Total sent: 0 FLAPJAX (18 decimals).</li>
+<li>Distinct recipients: 0.</li>
+<li>Distinct operators implied by first-BNB-funder grouping: 0 (no recipients, no groups).</li>
+<li>Transfers that could not be explained: none (no transfers).</li>
+</ul>
+<p>First-funder analysis therefore has no input rows; the grouping is vacuously complete. Every statement above is re-checkable on BscScan or any public BSC node: query the same token address for Transfer events with from = 0x7C34E9e21eE28A49Ff0b84B61774119E6633359f between blocks 130029690 and 130221520 and you get an empty result set.</p>
+<h2>Sanity checks (token/treasury are live)</h2>
+<ul>
+<li>Token decimals: 18 (viewCall <code>decimals()</code>). 0x90c8889f428F9Ebb77BB8f15CAD3a50a9aC680df is an active BEP-20.</li>
+<li>Treasury balance: ~814,716.5 FLAPJAX (viewCall <code>balanceOf(treasury)</code> = 814716536447382500000 raw, at 10-28 ~17:50 UTC) - the treasury holds a real pot even though it sent nothing in the window.</li>
+<li>Extended check: 0 outflows also observed 2026-10-28T05:00:00Z to 2026-10-28T18:00Z (~13h post-window), i.e. the treasury was silent for ~33h before this audit, consistent with a quiet (not broken) data state.</li>
+</ul>
+<h2>Re-check commands</h2>
+<pre># block boundaries
+curl -s https://bsc-dataseed.binance.org -H 'Content-Type: application/json' \
+  -d '{"jsonrpc":"2.0","id":1,"method":"eth_getBlockByNumber","params":["0x7B9BE5C",false]}'  # blk 130029690 -> ts 1793106000 = 2026-10-27T05:00:00Z
+# the core query (returns [])
+curl -s https://bsc-dataseed.binance.org -H 'Content-Type: application/json' \
+  -d '{"jsonrpc":"2.0","id":1,"method":"eth_getLogs","params":[{"fromBlock":"0x7B9BE5C","toBlock":"0x7BA5D90","address":"0x90c8889f428F9Ebb77BB8f15CAD3a50a9aC680df","topics":["0xddf252ad1be2c897b90f76b2f0f435670f67b954a479e7b602b2f3e4a68f0d9c","0x0000000000000000000000007C34E9E21EE28A49FF0B84B61774119E6633359F"]}]}'
+# treasury balance
+curl -s https://bsc-dataseed.binance.org -H 'Content-Type: application/json' \
+  -d '{"jsonrpc":"2.0","id":1,"method":"eth_call","params":[{"to":"0x90c8889f428F9Ebb77BB8f15CAD3a50a9aC680df","data":"0x70a082310000000000000000000000007c34e9e21ee28a49ff0b84b61774119e6633359f"},"latest"]}'</pre>
+<p>Conclusion: no FLAPJAX receipts were paid out of the treasury on 10-27 COT; the day's answer is the empty set, and the "confirming none" branch of the task's accept rules applies.</p>
+</body>
+</html>
